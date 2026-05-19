@@ -38,4 +38,16 @@ def handle_message(text):
         }
         save_training_record(record)
         send_message(f"已记录：{ex['name']} {ex['sets']}")
+        return
+    if text == "图表":
+        from tracker.plots import plot_sessions_per_week
+        p = plot_sessions_per_week()
+        if not p:
+            send_message("暂无训练数据，无法生成图表。")
+        else:
+            # Telegram 图片上传
+            import requests
+            url = f"{API}/sendPhoto"
+            with open(p, 'rb') as img:
+                requests.post(url, data={"chat_id": CHAT_ID}, files={"photo": img})
 

@@ -1,0 +1,40 @@
+name: Fitness Charts Weekly
+
+on:
+  schedule:
+    - cron: '0 12 * * 0'
+  workflow_dispatch:
+
+jobs:
+  charts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+      - name: Generate charts
+        run: |
+          python -m tracker.plots || true
+      - name: Send chart to Telegram
+        env:
+          FITNESS_BOT_TOKEN: ${{ secrets.FITNESS_BOT_TOKEN }}
+          FITNESS_CHAT_ID: ${{ secrets.FITNESS_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          import os, requests
+          token = os.environ.get('FITNESS_BOT_TOKEN')
+          chat = os.environ.get('FITNESS_CHAT_ID')
+          if not token or not chat:
+              raise SystemExit('missing secrets')
+          p = 'plots/sessions_per_week.png'
+          if not os.path.exists(p):
+              print('no chart')
+          else:
+              url = f"https://api.telegram.org/bot{token}/sendPhoto"
+              with open(p, 'rb') as img:
+                  requests.post(url, data={'chat_id': chat}, files={'photo': img})
+          PY
