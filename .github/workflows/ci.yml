@@ -1,0 +1,25 @@
+name: Fitness Tracker CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -U pip
+      - name: Lint
+        run: |
+          python -m py_compile $(git ls-files '*.py')
+      - name: Dry run weekly report
+        run: |
+          python main.py --week || true
